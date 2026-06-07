@@ -1,0 +1,131 @@
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  FRESCOO — Prisma Schema                                    ║
+// ║  Food Manufacturing Admin Dashboard                         ║
+// ║  Ingredient Cost Management & Recipe Costing                ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// User — Authenticated admin accounts (via Google SSO)
+// ─────────────────────────────────────────────
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  name     String?
+  image    String? // Google profile picture URL
+  role     Role    @default(ADMIN)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Audit trail: who created/modified resources
+  createdIngredients Ingredient[] @relation("IngredientCreatedBy")
+  updatedIngredients Ingredient[] @relation("IngredientUpdatedBy")
+  createdRecipes     Recipe[]     @relation("RecipeCreatedBy")
+  updatedRecipes     Recipe[]     @relation("RecipeUpdatedBy")
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+}
+
+// ─────────────────────────────────────────────
+// Ingredient — Raw materials with pricing
+// ─────────────────────────────────────────────
+model Ingredient {
+  id         String  @id // 10-digit unique ID (e.g., "0000000001")
+  name       String
+  pricePerKg Float // Current price in currency per kilogram
+  category   String? // Optional: e.g., "Dairy", "Spices", "Grains"
+  unit       String  @default("kg") // Display unit (always stored as kg internally)
+  notes      String? // Optional free-text notes
+  isActive   Boolean @default(true) // Soft delete flag
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Audit: who created/updated this ingredient
+  createdById String?
+  createdBy   User?   @relation("IngredientCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?   @relation("IngredientUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  // Relationships
+  recipeIngredients RecipeIngredient[]
+
+  @@unique([name]) // Prevent duplicate ingredient names
+  @@index([category]) // Fast category filtering
+  @@index([name]) // Fast name search
+  @@index([isActive]) // Fast active/inactive filtering
+  @@map("ingredients")
+}
+
+// ─────────────────────────────────────────────
+// Recipe — A collection of ingredients with costs
+// ─────────────────────────────────────────────
+model Recipe {
+  id        String  @id // 10-digit unique ID (e.g., "0000000001")
+  name      String
+  totalCost Float   @default(0) // Sum of all RecipeIngredient.calculatedCost
+  notes     String? // Optional recipe notes/instructions
+  isActive  Boolean @default(true) // Soft delete flag
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Audit: who created/updated this recipe
+  createdById String?
+  createdBy   User?   @relation("RecipeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?   @relation("RecipeUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  // Relationships
+  recipeIngredients RecipeIngredient[]
+
+  @@index([name]) // Fast name search
+  @@index([isActive]) // Fast active/inactive filtering
+  @@index([createdAt]) // Fast sorting by creation date
+  @@map("recipes")
+}
+
+// ─────────────────────────────────────────────
+// RecipeIngredient — Join table (Many-to-Many)
+// Stores the SNAPSHOT of pricing at time of creation
+// for historical cost preservation.
+// ─────────────────────────────────────────────
+model RecipeIngredient {
+  id String @id @default(cuid())
+
+  // Foreign Keys
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+
+  // Quantity & Cost
+  quantityGrams  Float // Amount of ingredient in grams
+  unitPricePerKg Float // ⚡ SNAPSHOT: price/kg at time of save
+  calculatedCost Float // ⚡ SNAPSHOT: (quantityGrams / 1000) × unitPricePerKg
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Prevent duplicate ingredient entries within the same recipe
+  @@unique([recipeId, ingredientId])
+  // Performance indexes
+  @@index([recipeId])
+  @@index([ingredientId])
+  @@map("recipe_ingredients")
+}

@@ -1,0 +1,12 @@
+# Root
+node_modules/
+*.log
+
+# Build outputs
+dist/
+.next/
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
