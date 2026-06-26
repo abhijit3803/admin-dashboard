@@ -15,7 +15,7 @@ const recipeIngredientItemSchema = z.object({
   ingredientId: z
     .string()
     .regex(/^\d{10}$/, "Ingredient ID must be a 10-digit numeric string"),
-  quantityGrams: z
+  quantity: z
     .number()
     .positive("Quantity must be a positive number")
     .finite("Quantity must be a finite number"),

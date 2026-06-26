@@ -130,6 +130,29 @@ export default function RecipeDetailPage() {
         <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', opacity: 0.5 }}>{ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''}</p>
       </div>
 
+      {/* Nutrition Summary Card */}
+      <div className="card" style={{
+        marginBottom: '1.5rem', padding: '1.25rem 1.5rem',
+        background: 'linear-gradient(135deg, rgba(34,197,94,0.06), rgba(16,185,129,0.06))',
+        border: '1px solid rgba(34,197,94,0.12)',
+      }}>
+        <p style={{ margin: '0 0 1rem', fontSize: '0.8rem', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nutrition Totals</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+          {[
+            { label: 'Calories', value: recipe.totalCalories, unit: 'kcal', color: '#f59e0b' },
+            { label: 'Protein', value: recipe.totalProtein, unit: 'g', color: '#ef4444' },
+            { label: 'Carbs', value: recipe.totalCarbs, unit: 'g', color: '#3b82f6' },
+            { label: 'Fat', value: recipe.totalFat, unit: 'g', color: '#22c55e' },
+          ].map((item) => (
+            <div key={item.label} style={{ textAlign: 'center', padding: '0.75rem', borderRadius: '10px', background: 'var(--color-surface)' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: item.color }}>{item.value.toFixed(1)}</div>
+              <div style={{ fontSize: '0.7rem', opacity: 0.5, marginTop: '0.15rem' }}>{item.unit}</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.25rem', fontWeight: 500 }}>{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Notes */}
       {recipe.notes && (
         <div className="card" style={{ marginBottom: '1.5rem' }}>

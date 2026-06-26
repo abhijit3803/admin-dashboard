@@ -39,11 +39,15 @@ export interface PaginationParams {
 export interface Ingredient {
   id: string;
   name: string;
-  pricePerKg: number;
+  pricePerUnit: number;
   category: string | null;
   unit: string;
   notes: string | null;
   isActive: boolean;
+  caloriesPerUnit: number | null;
+  proteinPerUnit: number | null;
+  carbsPerUnit: number | null;
+  fatPerUnit: number | null;
   createdAt: string;
   updatedAt: string;
   recipeIngredients?: RecipeIngredientWithRecipe[];
@@ -52,18 +56,22 @@ export interface Ingredient {
 export interface RecipeIngredientWithRecipe {
   id: string;
   recipeId: string;
-  quantityGrams: number;
-  unitPricePerKg: number;
+  quantity: number;
+  unitPrice: number;
   calculatedCost: number;
   recipe: { id: string; name: string };
 }
 
 export interface IngredientFormData {
   name: string;
-  pricePerKg: number;
+  pricePerUnit: number;
   category?: string;
   unit?: string;
   notes?: string;
+  caloriesPerUnit?: number | null;
+  proteinPerUnit?: number | null;
+  carbsPerUnit?: number | null;
+  fatPerUnit?: number | null;
 }
 
 // ============================================
@@ -74,6 +82,10 @@ export interface Recipe {
   id: string;
   name: string;
   totalCost: number;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
   notes: string | null;
   isActive: boolean;
   createdAt: string;
@@ -85,17 +97,21 @@ export interface RecipeIngredient {
   id: string;
   recipeId: string;
   ingredientId: string;
-  quantityGrams: number;
-  unitPricePerKg: number;
+  quantity: number;
+  unitPrice: number;
   calculatedCost: number;
   createdAt: string;
   updatedAt: string;
   ingredient: {
     id: string;
     name: string;
-    pricePerKg: number;
+    pricePerUnit: number;
     category: string | null;
     unit: string;
+    caloriesPerUnit: number | null;
+    proteinPerUnit: number | null;
+    carbsPerUnit: number | null;
+    fatPerUnit: number | null;
   };
 }
 
@@ -104,7 +120,7 @@ export interface RecipeFormData {
   notes?: string;
   ingredients: {
     ingredientId: string;
-    quantityGrams: number;
+    quantity: number;
   }[];
 }
 

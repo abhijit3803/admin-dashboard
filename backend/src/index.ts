@@ -15,6 +15,7 @@ import { errorHandler } from "./middleware/error.middleware.js";
 import ingredientRoutes from "./routes/ingredient.routes.js";
 import recipeRoutes from "./routes/recipe.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import csvRoutes from "./routes/csv.routes.js";
 
 // ─────────────────────────────────────────────
 // Configuration
@@ -95,6 +96,7 @@ app.use("/api", authMiddleware);
 app.use("/api/ingredients", ingredientRoutes);
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/csv", csvRoutes);
 
 // ─────────────────────────────────────────────
 // 404 Handler for unknown API routes

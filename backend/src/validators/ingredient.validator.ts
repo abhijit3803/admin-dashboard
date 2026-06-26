@@ -17,9 +17,9 @@ export const createIngredientSchema = z.object({
     .trim()
     .min(1, "Ingredient name is required")
     .max(200, "Ingredient name must be 200 characters or less"),
-  pricePerKg: z
+  pricePerUnit: z
     .number()
-    .positive("Price per kg must be a positive number")
+    .positive("Price per unit must be a positive number")
     .finite("Price must be a finite number"),
   category: z
     .string()
@@ -38,6 +38,10 @@ export const createIngredientSchema = z.object({
     .max(2000, "Notes must be 2000 characters or less")
     .nullish()
     .transform((val) => val || null),
+  caloriesPerUnit: z.number().nonnegative().finite().nullish().transform((val) => val ?? null),
+  proteinPerUnit: z.number().nonnegative().finite().nullish().transform((val) => val ?? null),
+  carbsPerUnit: z.number().nonnegative().finite().nullish().transform((val) => val ?? null),
+  fatPerUnit: z.number().nonnegative().finite().nullish().transform((val) => val ?? null),
 });
 
 export type CreateIngredientInput = z.infer<typeof createIngredientSchema>;
@@ -53,9 +57,9 @@ export const updateIngredientSchema = z
       .trim()
       .min(1, "Ingredient name is required")
       .max(200, "Ingredient name must be 200 characters or less"),
-    pricePerKg: z
+    pricePerUnit: z
       .number()
-      .positive("Price per kg must be a positive number")
+      .positive("Price per unit must be a positive number")
       .finite("Price must be a finite number"),
     category: z
       .string()
@@ -74,6 +78,10 @@ export const updateIngredientSchema = z
       .nullish()
       .transform((val) => val || null),
     isActive: z.boolean(),
+    caloriesPerUnit: z.number().nonnegative().finite().nullish().transform((val) => val ?? null),
+    proteinPerUnit: z.number().nonnegative().finite().nullish().transform((val) => val ?? null),
+    carbsPerUnit: z.number().nonnegative().finite().nullish().transform((val) => val ?? null),
+    fatPerUnit: z.number().nonnegative().finite().nullish().transform((val) => val ?? null),
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
@@ -96,7 +104,7 @@ export const ingredientQuerySchema = z.object({
     .transform((val) => val === "true")
     .optional(),
   sortBy: z
-    .enum(["name", "pricePerKg", "category", "createdAt", "updatedAt"])
+    .enum(["name", "pricePerUnit", "category", "createdAt", "updatedAt"])
     .default("name"),
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });

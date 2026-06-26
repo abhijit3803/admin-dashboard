@@ -14,6 +14,7 @@ import Pagination from '@/components/ui/Pagination';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Skeleton from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
+import CsvImportDialog from '@/components/ui/CsvImportDialog';
 
 export default function IngredientsPage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function IngredientsPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Ingredient | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
 
   const fetchIngredients = useCallback(async (page = 1) => {
     setLoading(true);
@@ -76,9 +78,15 @@ export default function IngredientsPage() {
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>Ingredients</h1>
-        <Link href="/ingredients/new">
-          <Button variant="primary">+ Add Ingredient</Button>
-        </Link>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <Button variant="ghost" size="sm" onClick={() => setShowCsvImport(true)}>📥 Import CSV</Button>
+          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/csv/ingredients/template`} download style={{ textDecoration: 'none' }}>
+            <Button variant="ghost" size="sm">📋 Template</Button>
+          </a>
+          <Link href="/ingredients/new">
+            <Button variant="primary">+ Add Ingredient</Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -119,7 +127,11 @@ export default function IngredientsPage() {
                   <th style={{ width: '120px' }}>ID</th>
                   <th>Name</th>
                   <th style={{ width: '140px' }}>Category</th>
-                  <th style={{ width: '140px', textAlign: 'right' }}>Price / Kg</th>
+                  <th style={{ width: '140px', textAlign: 'right' }}>Price / Unit</th>
+                  <th style={{ width: '60px', textAlign: 'right', fontSize: '0.75rem' }}>Cal</th>
+                  <th style={{ width: '55px', textAlign: 'right', fontSize: '0.75rem' }}>Pro</th>
+                  <th style={{ width: '55px', textAlign: 'right', fontSize: '0.75rem' }}>Carb</th>
+                  <th style={{ width: '50px', textAlign: 'right', fontSize: '0.75rem' }}>Fat</th>
                   <th style={{ width: '80px', textAlign: 'center' }}>Unit</th>
                   <th style={{ width: '180px', textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -130,7 +142,11 @@ export default function IngredientsPage() {
                     <td><code style={{ fontSize: '0.8rem', opacity: 0.7 }}>{ing.id}</code></td>
                     <td style={{ fontWeight: 500 }}>{ing.name}</td>
                     <td>{ing.category ? <Badge variant="info">{ing.category}</Badge> : <span style={{ opacity: 0.4 }}>—</span>}</td>
-                    <td style={{ textAlign: 'right' }}><CostDisplay amount={ing.pricePerKg} currency="₹" /></td>
+                    <td style={{ textAlign: 'right' }}><CostDisplay amount={ing.pricePerUnit} currency="₹" /></td>
+                    <td style={{ textAlign: 'right', fontSize: '0.8rem', opacity: 0.7 }}>{ing.caloriesPerUnit != null ? ing.caloriesPerUnit : <span style={{ opacity: 0.3 }}>—</span>}</td>
+                    <td style={{ textAlign: 'right', fontSize: '0.8rem', opacity: 0.7 }}>{ing.proteinPerUnit != null ? ing.proteinPerUnit : <span style={{ opacity: 0.3 }}>—</span>}</td>
+                    <td style={{ textAlign: 'right', fontSize: '0.8rem', opacity: 0.7 }}>{ing.carbsPerUnit != null ? ing.carbsPerUnit : <span style={{ opacity: 0.3 }}>—</span>}</td>
+                    <td style={{ textAlign: 'right', fontSize: '0.8rem', opacity: 0.7 }}>{ing.fatPerUnit != null ? ing.fatPerUnit : <span style={{ opacity: 0.3 }}>—</span>}</td>
                     <td style={{ textAlign: 'center' }}>{ing.unit}</td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
@@ -162,6 +178,17 @@ export default function IngredientsPage() {
         message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone. If this ingredient is used in any recipes, the deletion will be blocked.`}
         confirmText={deleting ? 'Deleting...' : 'Delete'}
         variant="danger"
+      />
+
+      {/* CSV Import Dialog */}
+      <CsvImportDialog
+        isOpen={showCsvImport}
+        onClose={() => setShowCsvImport(false)}
+        onImportComplete={() => fetchIngredients(1)}
+        validateEndpoint="/csv/ingredients/validate"
+        importEndpoint="/csv/ingredients/import"
+        templateEndpoint="/csv/ingredients/template"
+        title="Import Ingredients from CSV"
       />
     </div>
   );

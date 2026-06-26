@@ -20,8 +20,8 @@ export default function CostBreakdown({ recipeIngredients, totalCost }: CostBrea
           <thead>
             <tr>
               <th>Ingredient</th>
-              <th style={{ textAlign: 'right', width: '120px' }}>Quantity</th>
-              <th style={{ textAlign: 'right', width: '130px' }}>Unit Price</th>
+              <th style={{ textAlign: 'right', padding: '0.75rem', color: 'var(--color-text)', opacity: 0.7, fontWeight: 500, fontSize: '0.85rem' }}>Unit Price</th>
+              <th style={{ textAlign: 'right', padding: '0.75rem', color: 'var(--color-text)', opacity: 0.7, fontWeight: 500, fontSize: '0.85rem' }}>Qty</th>
               <th style={{ textAlign: 'right', width: '130px' }}>Cost</th>
               <th style={{ textAlign: 'right', width: '80px' }}>%</th>
             </tr>
@@ -32,8 +32,8 @@ export default function CostBreakdown({ recipeIngredients, totalCost }: CostBrea
               return (
                 <tr key={ri.id}>
                   <td style={{ fontWeight: 500 }}>{ri.ingredient.name}</td>
-                  <td style={{ textAlign: 'right' }}>{ri.quantityGrams.toLocaleString('en-IN')} g</td>
-                  <td style={{ textAlign: 'right' }}><CostDisplay amount={ri.unitPricePerKg} currency="₹" />/kg</td>
+                  <td style={{ textAlign: 'right' }}><CostDisplay amount={ri.unitPrice} currency="₹" /></td>
+                  <td style={{ textAlign: 'right' }}>{ri.quantity.toLocaleString('en-IN')} {ri.ingredient?.unit || 'unit'}</td>
                   <td style={{ textAlign: 'right' }}><CostDisplay amount={ri.calculatedCost} currency="₹" /></td>
                   <td style={{ textAlign: 'right' }}>
                     <span style={{

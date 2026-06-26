@@ -10,6 +10,7 @@ import { generateUniqueId } from "../utils/idGenerator.js";
 import {
   calculateIngredientCost,
   calculateTotalRecipeCost,
+  calculateRecipeNutrition,
 } from "../utils/costCalculator.js";
 import { AppError } from "../types/index.js";
 import type { PaginationMeta } from "../types/index.js";
@@ -25,7 +26,7 @@ type RecipeWithIngredients = Prisma.RecipeGetPayload<{
   include: {
     recipeIngredients: {
       include: {
-        ingredient: { select: { id: true; name: true; unit: true; category: true } };
+        ingredient: { select: { id: true; name: true; unit: true; category: true; caloriesPerUnit: true; proteinPerUnit: true; carbsPerUnit: true; fatPerUnit: true } };
       };
     };
   };
@@ -63,7 +64,7 @@ export async function listRecipes(
         recipeIngredients: {
           include: {
             ingredient: {
-              select: { id: true, name: true, unit: true, category: true },
+              select: { id: true, name: true, unit: true, category: true, caloriesPerUnit: true, proteinPerUnit: true, carbsPerUnit: true, fatPerUnit: true },
             },
           },
         },
@@ -94,7 +95,7 @@ export async function getRecipeById(
       recipeIngredients: {
         include: {
           ingredient: {
-            select: { id: true, name: true, unit: true, category: true },
+            select: { id: true, name: true, unit: true, category: true, caloriesPerUnit: true, proteinPerUnit: true, carbsPerUnit: true, fatPerUnit: true },
           },
         },
       },
@@ -122,11 +123,11 @@ export async function createRecipe(
   const ingredientIds = data.ingredients.map((i) => i.ingredientId);
   const dbIngredients = await prisma.ingredient.findMany({
     where: { id: { in: ingredientIds } },
-    select: { id: true, pricePerKg: true },
+    select: { id: true, pricePerUnit: true, caloriesPerUnit: true, proteinPerUnit: true, carbsPerUnit: true, fatPerUnit: true },
   });
 
   // Validate all ingredients exist
-  const priceMap = new Map(dbIngredients.map((i) => [i.id, i.pricePerKg]));
+  const priceMap = new Map(dbIngredients.map((i) => [i.id, i.pricePerUnit]));
 
   for (const ing of data.ingredients) {
     if (!priceMap.has(ing.ingredientId)) {
@@ -139,25 +140,40 @@ export async function createRecipe(
 
   // Calculate costs with price snapshots
   const recipeIngredients = data.ingredients.map((ing) => {
-    const pricePerKg = priceMap.get(ing.ingredientId)!;
+    const pricePerUnit = priceMap.get(ing.ingredientId)!;
     const calculatedCost = calculateIngredientCost(
-      ing.quantityGrams,
-      pricePerKg
+      ing.quantity,
+      pricePerUnit
     );
 
     return {
       ingredientId: ing.ingredientId,
-      quantityGrams: ing.quantityGrams,
-      unitPricePerKg: pricePerKg,
+      quantity: ing.quantity,
+      unitPrice: pricePerUnit,
       calculatedCost,
     };
   });
 
   const totalCost = calculateTotalRecipeCost(
     data.ingredients.map((ing) => ({
-      quantityGrams: ing.quantityGrams,
-      pricePerKg: priceMap.get(ing.ingredientId)!,
+      quantity: ing.quantity,
+      pricePerUnit: priceMap.get(ing.ingredientId)!,
     }))
+  );
+
+  // Calculate nutrition totals
+  const ingredientMap = new Map(dbIngredients.map((i) => [i.id, i]));
+  const nutrition = calculateRecipeNutrition(
+    data.ingredients.map((ing) => {
+      const dbIng = ingredientMap.get(ing.ingredientId)!;
+      return {
+        quantity: ing.quantity,
+        caloriesPerUnit: dbIng.caloriesPerUnit,
+        proteinPerUnit: dbIng.proteinPerUnit,
+        carbsPerUnit: dbIng.carbsPerUnit,
+        fatPerUnit: dbIng.fatPerUnit,
+      };
+    })
   );
 
   // Create recipe with all ingredients in a single transaction
@@ -167,6 +183,7 @@ export async function createRecipe(
       name: data.name,
       notes: data.notes,
       totalCost,
+      ...nutrition,
       createdById: userId ?? null,
       updatedById: userId ?? null,
       recipeIngredients: {
@@ -177,7 +194,7 @@ export async function createRecipe(
       recipeIngredients: {
         include: {
           ingredient: {
-            select: { id: true, name: true, unit: true, category: true },
+            select: { id: true, name: true, unit: true, category: true, caloriesPerUnit: true, proteinPerUnit: true, carbsPerUnit: true, fatPerUnit: true },
           },
         },
       },
@@ -211,10 +228,10 @@ export async function updateRecipe(
     const ingredientIds = data.ingredients.map((i) => i.ingredientId);
     const dbIngredients = await prisma.ingredient.findMany({
       where: { id: { in: ingredientIds } },
-      select: { id: true, pricePerKg: true },
+      select: { id: true, pricePerUnit: true, caloriesPerUnit: true, proteinPerUnit: true, carbsPerUnit: true, fatPerUnit: true },
     });
 
-    const priceMap = new Map(dbIngredients.map((i) => [i.id, i.pricePerKg]));
+    const priceMap = new Map(dbIngredients.map((i) => [i.id, i.pricePerUnit]));
 
     for (const ing of data.ingredients) {
       if (!priceMap.has(ing.ingredientId)) {
@@ -226,19 +243,19 @@ export async function updateRecipe(
     }
 
     const recipeIngredients = data.ingredients.map((ing) => {
-      const pricePerKg = priceMap.get(ing.ingredientId)!;
+      const pricePerUnit = priceMap.get(ing.ingredientId)!;
       return {
         ingredientId: ing.ingredientId,
-        quantityGrams: ing.quantityGrams,
-        unitPricePerKg: pricePerKg,
-        calculatedCost: calculateIngredientCost(ing.quantityGrams, pricePerKg),
+        quantity: ing.quantity,
+        unitPrice: pricePerUnit,
+        calculatedCost: calculateIngredientCost(ing.quantity, pricePerUnit),
       };
     });
 
     const totalCost = calculateTotalRecipeCost(
       data.ingredients.map((ing) => ({
-        quantityGrams: ing.quantityGrams,
-        pricePerKg: priceMap.get(ing.ingredientId)!,
+        quantity: ing.quantity,
+        pricePerUnit: priceMap.get(ing.ingredientId)!,
       }))
     );
 
@@ -255,6 +272,18 @@ export async function updateRecipe(
           notes: data.notes,
           isActive: data.isActive,
           totalCost,
+          ...calculateRecipeNutrition(
+            data.ingredients!.map((ing) => {
+              const dbIng = dbIngredients.find((d) => d.id === ing.ingredientId)!;
+              return {
+                quantity: ing.quantity,
+                caloriesPerUnit: dbIng.caloriesPerUnit,
+                proteinPerUnit: dbIng.proteinPerUnit,
+                carbsPerUnit: dbIng.carbsPerUnit,
+                fatPerUnit: dbIng.fatPerUnit,
+              };
+            })
+          ),
           updatedById: userId ?? undefined,
           recipeIngredients: {
             create: recipeIngredients,
@@ -264,7 +293,7 @@ export async function updateRecipe(
           recipeIngredients: {
             include: {
               ingredient: {
-                select: { id: true, name: true, unit: true, category: true },
+                select: { id: true, name: true, unit: true, category: true, caloriesPerUnit: true, proteinPerUnit: true, carbsPerUnit: true, fatPerUnit: true },
               },
             },
           },
@@ -288,7 +317,7 @@ export async function updateRecipe(
       recipeIngredients: {
         include: {
           ingredient: {
-            select: { id: true, name: true, unit: true, category: true },
+            select: { id: true, name: true, unit: true, category: true, caloriesPerUnit: true, proteinPerUnit: true, carbsPerUnit: true, fatPerUnit: true },
           },
         },
       },
@@ -332,7 +361,7 @@ export async function recalculateRecipeCost(
       recipeIngredients: {
         include: {
           ingredient: {
-            select: { id: true, pricePerKg: true },
+            select: { id: true, pricePerUnit: true, caloriesPerUnit: true, proteinPerUnit: true, carbsPerUnit: true, fatPerUnit: true },
           },
         },
       },
@@ -345,13 +374,13 @@ export async function recalculateRecipeCost(
 
   // Update each recipe ingredient with current price
   const updates = recipe.recipeIngredients.map((ri) => {
-    const currentPrice = ri.ingredient.pricePerKg;
-    const newCost = calculateIngredientCost(ri.quantityGrams, currentPrice);
+    const currentPrice = ri.ingredient.pricePerUnit;
+    const newCost = calculateIngredientCost(ri.quantity, currentPrice);
 
     return prisma.recipeIngredient.update({
       where: { id: ri.id },
       data: {
-        unitPricePerKg: currentPrice,
+        unitPrice: currentPrice,
         calculatedCost: newCost,
       },
     });
@@ -360,18 +389,30 @@ export async function recalculateRecipeCost(
   // Calculate new total
   const newTotalCost = calculateTotalRecipeCost(
     recipe.recipeIngredients.map((ri) => ({
-      quantityGrams: ri.quantityGrams,
-      pricePerKg: ri.ingredient.pricePerKg,
+      quantity: ri.quantity,
+      pricePerUnit: ri.ingredient.pricePerUnit,
     }))
   );
 
   // Execute all updates in a transaction
+  // Calculate new nutrition totals
+  const newNutrition = calculateRecipeNutrition(
+    recipe.recipeIngredients.map((ri) => ({
+      quantity: ri.quantity,
+      caloriesPerUnit: ri.ingredient.caloriesPerUnit,
+      proteinPerUnit: ri.ingredient.proteinPerUnit,
+      carbsPerUnit: ri.ingredient.carbsPerUnit,
+      fatPerUnit: ri.ingredient.fatPerUnit,
+    }))
+  );
+
   await prisma.$transaction([
     ...updates,
     prisma.recipe.update({
       where: { id },
       data: {
         totalCost: newTotalCost,
+        ...newNutrition,
         updatedById: userId ?? undefined,
       },
     }),

@@ -41,16 +41,22 @@ enum Role {
 }
 
 // ─────────────────────────────────────────────
-// Ingredient — Raw materials with pricing
+// Ingredient — Raw materials with pricing & nutrition
 // ─────────────────────────────────────────────
 model Ingredient {
-  id         String  @id // 10-digit unique ID (e.g., "0000000001")
-  name       String
-  pricePerKg Float // Current price in currency per kilogram
-  category   String? // Optional: e.g., "Dairy", "Spices", "Grains"
-  unit       String  @default("kg") // Display unit (always stored as kg internally)
-  notes      String? // Optional free-text notes
-  isActive   Boolean @default(true) // Soft delete flag
+  id           String  @id // 10-digit unique ID (e.g., "0000000001")
+  name         String
+  pricePerUnit Float   // Price per unit (unit defined by `unit` field)
+  category     String? // Optional: e.g., "Dairy", "Spices", "Grains"
+  unit         String  @default("kg") // Unit of measure: kg, g, L, mL, nos, etc.
+  notes        String? // Optional free-text notes
+  isActive     Boolean @default(true) // Soft delete flag
+
+  // Nutritional info per unit (optional)
+  caloriesPerUnit Float? // kcal per unit
+  proteinPerUnit  Float? // grams of protein per unit
+  carbsPerUnit    Float? // grams of carbohydrates per unit
+  fatPerUnit      Float? // grams of fat per unit
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -80,6 +86,12 @@ model Recipe {
   totalCost Float   @default(0) // Sum of all RecipeIngredient.calculatedCost
   notes     String? // Optional recipe notes/instructions
   isActive  Boolean @default(true) // Soft delete flag
+
+  // Aggregated nutrition totals (calculated from ingredients)
+  totalCalories Float @default(0) // Total kcal for the recipe
+  totalProtein  Float @default(0) // Total grams of protein
+  totalCarbs    Float @default(0) // Total grams of carbs
+  totalFat      Float @default(0) // Total grams of fat
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -115,9 +127,9 @@ model RecipeIngredient {
   ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
 
   // Quantity & Cost
-  quantityGrams  Float // Amount of ingredient in grams
-  unitPricePerKg Float // ⚡ SNAPSHOT: price/kg at time of save
-  calculatedCost Float // ⚡ SNAPSHOT: (quantityGrams / 1000) × unitPricePerKg
+  quantity       Float // Amount of ingredient in its unit
+  unitPrice      Float // ⚡ SNAPSHOT: price per unit at time of save
+  calculatedCost Float // ⚡ SNAPSHOT: quantity × unitPrice
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -129,3 +141,4 @@ model RecipeIngredient {
   @@index([ingredientId])
   @@map("recipe_ingredients")
 }
+

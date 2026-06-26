@@ -41,7 +41,7 @@ export default function NewRecipePage() {
     if (!name.trim()) errs.name = 'Recipe name is required';
     if (rows.length === 0) errs.ingredients = 'Add at least one ingredient';
     if (rows.some((r) => !r.ingredientId)) errs.ingredients = 'All ingredient rows must have a selection';
-    if (rows.some((r) => r.quantityGrams <= 0)) errs.ingredients = 'All quantities must be greater than 0';
+    if (rows.some((r) => r.quantity <= 0)) errs.ingredients = 'All quantities must be greater than 0';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -56,7 +56,7 @@ export default function NewRecipePage() {
         notes: notes.trim() || undefined,
         ingredients: rows.map((r) => ({
           ingredientId: r.ingredientId,
-          quantityGrams: r.quantityGrams,
+          quantity: r.quantity,
         })),
       };
       const res = await api.post<ApiResponse<Recipe>>('/recipes', payload);

@@ -15,17 +15,21 @@ export default function NewIngredientPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '',
-    pricePerKg: '',
+    pricePerUnit: '',
     category: '',
     unit: 'kg',
     notes: '',
+    caloriesPerUnit: '',
+    proteinPerUnit: '',
+    carbsPerUnit: '',
+    fatPerUnit: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = 'Ingredient name is required';
-    if (!form.pricePerKg || parseFloat(form.pricePerKg) <= 0) errs.pricePerKg = 'Price must be greater than 0';
+    if (!form.pricePerUnit || parseFloat(form.pricePerUnit) <= 0) errs.pricePerUnit = 'Price must be greater than 0';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -37,10 +41,14 @@ export default function NewIngredientPage() {
     try {
       const payload = {
         name: form.name.trim(),
-        pricePerKg: parseFloat(form.pricePerKg),
+        pricePerUnit: parseFloat(form.pricePerUnit),
         category: form.category.trim() || undefined,
         unit: form.unit.trim() || 'kg',
         notes: form.notes.trim() || undefined,
+        caloriesPerUnit: form.caloriesPerUnit ? parseFloat(form.caloriesPerUnit) : null,
+        proteinPerUnit: form.proteinPerUnit ? parseFloat(form.proteinPerUnit) : null,
+        carbsPerUnit: form.carbsPerUnit ? parseFloat(form.carbsPerUnit) : null,
+        fatPerUnit: form.fatPerUnit ? parseFloat(form.fatPerUnit) : null,
       };
       await api.post<ApiResponse<Ingredient>>('/ingredients', payload);
       toast.success('Ingredient created', `"${form.name}" has been added.`);
@@ -73,13 +81,13 @@ export default function NewIngredientPage() {
               required
             />
             <Input
-              label="Price per Kilogram (₹)"
-              id="pricePerKg"
+              label="Price per Unit (₹)"
+              id="pricePerUnit"
               type="number"
               placeholder="e.g. 45.50"
-              value={form.pricePerKg}
-              onChange={(e) => setForm({ ...form, pricePerKg: e.target.value })}
-              error={errors.pricePerKg}
+              value={form.pricePerUnit}
+              onChange={(e) => setForm({ ...form, pricePerUnit: e.target.value })}
+              error={errors.pricePerUnit}
               required
             />
             <Input
@@ -90,14 +98,25 @@ export default function NewIngredientPage() {
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               helper="Optional — helps organize ingredients"
             />
-            <Input
-              label="Unit"
-              id="unit"
-              placeholder="kg"
-              value={form.unit}
-              onChange={(e) => setForm({ ...form, unit: e.target.value })}
-              helper="Display unit (default: kg)"
-            />
+            <div className="input-group">
+              <label htmlFor="unit" style={{ fontWeight: 500, fontSize: '0.9rem', marginBottom: '0.375rem', display: 'block' }}>Unit</label>
+              <select
+                id="unit"
+                className="input"
+                value={form.unit}
+                onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontFamily: 'inherit', fontSize: '0.9rem' }}
+              >
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="L">L</option>
+                <option value="mL">mL</option>
+                <option value="nos">nos</option>
+                <option value="pcs">pcs</option>
+                <option value="dozen">dozen</option>
+              </select>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', opacity: 0.5 }}>Display unit (default: kg)</p>
+            </div>
             <div className="input-group">
               <label htmlFor="notes" style={{ fontWeight: 500, fontSize: '0.9rem', marginBottom: '0.375rem', display: 'block' }}>Notes</label>
               <textarea
@@ -109,6 +128,54 @@ export default function NewIngredientPage() {
                 rows={3}
                 style={{ resize: 'vertical', width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontFamily: 'inherit', fontSize: '0.9rem' }}
               />
+            </div>
+
+            {/* Nutritional Information */}
+            <div style={{ marginTop: '0.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--color-border)' }}>
+              <h3 style={{ margin: '0 0 0.25rem', fontSize: '1rem', fontWeight: 600 }}>Nutritional Information (per unit)</h3>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.8rem', opacity: 0.5 }}>Optional — used for recipe nutrition calculations</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <Input
+                  label="Calories (kcal)"
+                  id="caloriesPerUnit"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g. 340"
+                  value={form.caloriesPerUnit}
+                  onChange={(e) => setForm({ ...form, caloriesPerUnit: e.target.value })}
+                />
+                <Input
+                  label="Protein (g)"
+                  id="proteinPerUnit"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g. 13.2"
+                  value={form.proteinPerUnit}
+                  onChange={(e) => setForm({ ...form, proteinPerUnit: e.target.value })}
+                />
+                <Input
+                  label="Carbs (g)"
+                  id="carbsPerUnit"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g. 71.2"
+                  value={form.carbsPerUnit}
+                  onChange={(e) => setForm({ ...form, carbsPerUnit: e.target.value })}
+                />
+                <Input
+                  label="Fat (g)"
+                  id="fatPerUnit"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g. 2.5"
+                  value={form.fatPerUnit}
+                  onChange={(e) => setForm({ ...form, fatPerUnit: e.target.value })}
+                />
+              </div>
             </div>
           </div>
 

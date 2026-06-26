@@ -117,12 +117,16 @@ export async function createIngredient(
     data: {
       id,
       name: data.name,
-      pricePerKg: data.pricePerKg,
+      pricePerUnit: data.pricePerUnit,
       category: data.category,
       unit: data.unit,
       notes: data.notes,
       createdById: userId ?? null,
       updatedById: userId ?? null,
+      caloriesPerUnit: data.caloriesPerUnit,
+      proteinPerUnit: data.proteinPerUnit,
+      carbsPerUnit: data.carbsPerUnit,
+      fatPerUnit: data.fatPerUnit,
     },
   });
 
@@ -153,11 +157,15 @@ export async function updateIngredient(
     ...(userId ? { updatedBy: { connect: { id: userId } } } : {}),
   };
   if (data.name !== undefined) updateData.name = data.name;
-  if (data.pricePerKg !== undefined) updateData.pricePerKg = data.pricePerKg;
+  if (data.pricePerUnit !== undefined) updateData.pricePerUnit = data.pricePerUnit;
   if (data.category !== undefined) updateData.category = data.category;
   if (data.unit !== undefined) updateData.unit = data.unit;
   if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
+  if (data.caloriesPerUnit !== undefined) updateData.caloriesPerUnit = data.caloriesPerUnit;
+  if (data.proteinPerUnit !== undefined) updateData.proteinPerUnit = data.proteinPerUnit;
+  if (data.carbsPerUnit !== undefined) updateData.carbsPerUnit = data.carbsPerUnit;
+  if (data.fatPerUnit !== undefined) updateData.fatPerUnit = data.fatPerUnit;
 
   const ingredient = await prisma.ingredient.update({
     where: { id },
