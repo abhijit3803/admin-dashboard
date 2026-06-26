@@ -119,17 +119,19 @@ app.use(errorHandler);
 // Server Startup
 // ─────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║  🍳 FRESCOO API Server                                      ║
-║  ─────────────────────────────────────────────────────────── ║
-║  Port:        ${String(PORT).padEnd(47)}║
-║  Environment: ${NODE_ENV.padEnd(47)}║
-║  CORS Origin: ${FRONTEND_URL.padEnd(47)}║
-║  Auth:        ${(process.env.SKIP_AUTH === "true" ? "SKIPPED (dev mode)" : "Enabled").padEnd(47)}║
-╚══════════════════════════════════════════════════════════════╝
-  `);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  🍳 FRESCOO API Server                                      ║
+  ║  ─────────────────────────────────────────────────────────── ║
+  ║  Port:        ${String(PORT).padEnd(47)}║
+  ║  Environment: ${NODE_ENV.padEnd(47)}║
+  ║  CORS Origin: ${FRONTEND_URL.padEnd(47)}║
+  ║  Auth:        ${(process.env.SKIP_AUTH === "true" ? "SKIPPED (dev mode)" : "Enabled").padEnd(47)}║
+  ╚══════════════════════════════════════════════════════════════╝
+    `);
+  });
+}
 
 export default app;
