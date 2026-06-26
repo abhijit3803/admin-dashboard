@@ -67,8 +67,15 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 // ─────────────────────────────────────────────
-// Health Check (unauthenticated)
+// Root & Health Check (unauthenticated)
 // ─────────────────────────────────────────────
+
+app.get("/", (_req, res) => {
+  res.json({
+    message: "Welcome to FRESCOO API Server. Please use /api for endpoints.",
+    health: "/api/health"
+  });
+});
 
 app.get("/api/health", (_req, res) => {
   res.json({
